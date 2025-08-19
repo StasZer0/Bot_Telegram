@@ -1,6 +1,6 @@
 python-telegram-bot==21.6
-aiohttp
-python-dotenv
 pandas
 matplotlib
+aiohttp
 requests
+python-dotenv
