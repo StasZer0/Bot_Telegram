@@ -1,4 +1,11 @@
 # bot_service.py
+from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update
+
+async def _post_init(app: Application):
+    # rimuove webhook (se esiste) e scarta update pendenti
+    await app.bot.delete_webhook(drop_pending_updates=True)
+
 import os, threading, tempfile, time
 from datetime import datetime as dt
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -77,7 +84,7 @@ async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # WTI
         if res_wti["ohlc"] is not None and len(res_wti["ohlc"]) >= 2 and res_wti["df"] is not None:
             p1 = os.path.join(tempfile.gettempdir(), f"wti_candle_{int(time.time())}.png")
-            make_chart_png("WTI (CL=F)", res_wti["ohlc"], p1); tmpfiles.append(("WTI — candele 2 settimane", p1))
+            make_chart_png("WTI (CL=F)", res_wti["ohlc"], p1); tmpfiles.end(("WTI — candele 2 settimane", p1))
             p2 = os.path.join(tempfile.gettempdir(), f"wti_daily_{int(time.time())}.png")
             make_daily_line_chart_png("WTI (CL=F)", res_wti["df"], p2, days=60); tmpfiles.append(("WTI — grafico giornaliero", p2))
             p3 = os.path.join(tempfile.gettempdir(), f"wti_table_{int(time.time())}.png")
@@ -108,7 +115,7 @@ def main():
     # Avvia il server HTTP /health su PORT (Render lo richiede)
     threading.Thread(target=start_health_server, daemon=True).start()
 
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(_post_init).build()
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("help", start_cmd))
     app.add_handler(CommandHandler("oil", oil_cmd))
@@ -117,7 +124,13 @@ def main():
     app.add_handler(CommandHandler("report", report_cmd))
 
     print("Bot Telegram in polling... (/start, /oil, /report)")
-    app.run_polling()
+    
+    app.run_polling(
+    allowed_updates=Update.ALL_TYPES,
+    drop_pending_updates=True
+    )
+
 
 if __name__ == "__main__":
     main()
+
