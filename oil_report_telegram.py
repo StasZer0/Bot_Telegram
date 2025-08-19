@@ -562,6 +562,26 @@ def main():
 
     if diag:
         print("✔ Report + grafici inviati su Telegram.")
+# --- Mini health server per Render (opzionale) --------------------------
+import threading
+from aiohttp import web
+
+async def _health(request):
+    return web.Response(text="ok")
+
+async def _run_health():
+    app = web.Application()
+    app.router.add_get("/health", _health)
+    port = int(os.getenv("PORT", "10000"))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+def start_health_server():
+    import asyncio
+    asyncio.run(_run_health())
 
 if __name__ == "__main__":
     main()
+
